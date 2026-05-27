@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: gitops-thesis
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: GitOps thesis project - all four environments
+  sourceRepos:
+    - "git@github.com:emadrasooli/infra-code.git"
+  destinations:
+    - namespace: "dev"
+      server: https://kubernetes.default.svc
+    - namespace: "qa"
+      server: https://kubernetes.default.svc
+    - namespace: "staging"
+      server: https://kubernetes.default.svc
+    - namespace: "prod"
+      server: https://kubernetes.default.svc
+    - namespace: "argocd"
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

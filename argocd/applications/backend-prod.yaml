@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backend-prod
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: prod
+    app: backend
+spec:
+  project: gitops-thesis
+  source:
+    repoURL: git@github.com:emadrasooli/infra-code.git
+    targetRevision: main
+    path: apps/backend/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: prod
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    syncOptions:
+      - CreateNamespace=true

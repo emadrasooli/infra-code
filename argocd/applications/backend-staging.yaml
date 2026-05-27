@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backend-staging
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: staging
+    app: backend
+spec:
+  project: gitops-thesis
+  source:
+    repoURL: git@github.com:emadrasooli/infra-code.git
+    targetRevision: main
+    path: apps/backend/overlays/staging
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: staging
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    syncOptions:
+      - CreateNamespace=true

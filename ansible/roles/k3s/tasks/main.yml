@@ -1,0 +1,37 @@
+---
+- name: Download k3s installation script
+  get_url:
+    url: https://get.k3s.io
+    dest: /tmp/k3s-install.sh
+    mode: "0755"
+
+- name: Install k3s
+  command: /tmp/k3s-install.sh
+  environment:
+    INSTALL_K3S_EXEC: "--disable=traefik --write-kubeconfig-mode=644"
+
+- name: Wait for k3s to be ready
+  wait_for:
+    port: 6443
+    delay: 10
+    timeout: 60
+
+- name: Create .kube directory for user
+  file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Copy kubeconfig
+  copy:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: "/home/{{ ansible_user }}/.kube/config"
+    owner: "{{ ansible_user }}"
+    remote_src: yes
+
+- name: Add KUBECONFIG to bashrc
+  lineinfile:
+    path: "/home/{{ ansible_user }}/.bashrc"
+    line: "export KUBECONFIG=~/.kube/config"
+    state: present

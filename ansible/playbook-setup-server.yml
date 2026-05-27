@@ -1,0 +1,7 @@
+---
+- name: Setup bare metal server
+  hosts: bare_metal
+  become: yes
+  roles:
+    - common
+    - k3s

@@ -1,0 +1,40 @@
+name: Validate Manifests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup kustomize
+        uses: multani/action-setup-kustomize@v1
+        with:
+          version: 5.8.1
+
+      - name: Validate frontend overlays
+        run: |
+          kustomize build apps/frontend/overlays/dev
+          kustomize build apps/frontend/overlays/qa
+          kustomize build apps/frontend/overlays/staging
+          kustomize build apps/frontend/overlays/prod
+
+      - name: Validate backend overlays
+        run: |
+          kustomize build apps/backend/overlays/dev
+          kustomize build apps/backend/overlays/qa
+          kustomize build apps/backend/overlays/staging
+          kustomize build apps/backend/overlays/prod
+
+      - name: Validate database overlays
+        run: |
+          kustomize build apps/database/overlays/dev
+          kustomize build apps/database/overlays/qa
+          kustomize build apps/database/overlays/staging
+          kustomize build apps/database/overlays/prod
