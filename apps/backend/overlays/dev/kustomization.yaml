@@ -20,4 +20,4 @@ patches:
 
 images:
   - name: ghcr.io/emadrasooli/backend-api
-    newTag: 96f2583
+    newTag: 20260528-1652
