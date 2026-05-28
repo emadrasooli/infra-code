@@ -14,10 +14,13 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/env/0/value
         value: "development"
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Never
     target:
       kind: Deployment
       name: backend
 
 images:
   - name: ghcr.io/emadrasooli/backend-api
-    newTag: 20260528-1652
+    newTag: fixed-v1

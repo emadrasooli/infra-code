@@ -12,14 +12,11 @@ patches:
         path: /spec/replicas
         value: 1
       - op: replace
-        path: /spec/template/spec/containers/0/resources/requests/memory
-        value: "64Mi"
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/memory
-        value: "128Mi"
-      - op: replace
         path: /spec/template/spec/containers/0/env/0/value
         value: "development"
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Never
     target:
       kind: Deployment
       name: frontend
