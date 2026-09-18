@@ -1,0 +1,63 @@
+name: Mirror Argo CD Image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure skopeo is installed
+        run: |
+          if ! command -v skopeo >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y skopeo
+          fi
+          skopeo --version
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Inspect source image manifest digest
+        run: |
+          SRC_IMAGE="quay.io/argoproj/argocd:v3.5.3"
+          echo "Inspecting source image: $SRC_IMAGE"
+          skopeo inspect --raw "docker://$SRC_IMAGE" > /tmp/src_manifest.json
+          SRC_DIGEST=$(sha256sum /tmp/src_manifest.json | awk '{print $1}')
+          echo "Source manifest digest: sha256:$SRC_DIGEST"
+          echo "SRC_DIGEST=$SRC_DIGEST" >> $GITHUB_ENV
+
+      - name: Copy image from Quay to GHCR (multi-platform)
+        run: |
+          SRC_IMAGE="quay.io/argoproj/argocd:v3.5.3"
+          DEST_IMAGE="ghcr.io/emadrasooli/argocd:v3.5.3"
+          echo "Copying $SRC_IMAGE to $DEST_IMAGE using skopeo copy --all"
+          skopeo copy --all \
+            --dest-authfile "$HOME/.docker/config.json" \
+            "docker://$SRC_IMAGE" \
+            "docker://$DEST_IMAGE"
+
+      - name: Verify and inspect destination image
+        run: |
+          DEST_IMAGE="ghcr.io/emadrasooli/argocd:v3.5.3"
+          echo "Inspecting destination image: $DEST_IMAGE"
+          skopeo inspect --raw --authfile "$HOME/.docker/config.json" "docker://$DEST_IMAGE" > /tmp/dest_manifest.json
+          if [ ! -s /tmp/dest_manifest.json ]; then
+            echo "Error: Destination manifest is empty or missing" >&2
+            exit 1
+          fi
+          DEST_DIGEST=$(sha256sum /tmp/dest_manifest.json | awk '{print $1}')
+          echo "Destination manifest digest: sha256:$DEST_DIGEST"
+
+          if [ "$SRC_DIGEST" = "$DEST_DIGEST" ]; then
+            echo "Digest comparison: IDENTICAL DIGEST (sha256:$DEST_DIGEST)"
+          else
+            echo "Digest comparison: DIFFERENT DIGEST (source sha256:$SRC_DIGEST vs destination sha256:$DEST_DIGEST)"
+          fi
