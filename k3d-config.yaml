@@ -4,7 +4,7 @@ metadata:
   name: gitops-thesis
 servers: 1
 agents: 2
-image: rancher/k3s:v1.30.4-k3s1
+image: rancher/k3s:v1.36.4-k3s1
 kubeAPI:
   host: "127.0.0.1"
   hostIP: "127.0.0.1"
