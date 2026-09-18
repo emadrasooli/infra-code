@@ -20,5 +20,3 @@ spec:
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
-    syncOptions:
-      - CreateNamespace=true
