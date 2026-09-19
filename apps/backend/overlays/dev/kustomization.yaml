@@ -4,21 +4,22 @@ kind: Kustomization
 namespace: dev
 
 resources:
-  - ../../base
-  - backend-sealed-dev.yaml
+- ../../base
+- backend-sealed-dev.yaml
 
 patches:
-  - patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 1
-      - op: replace
-        path: /spec/template/spec/containers/0/env/0/value
-        value: "development"
-    target:
-      kind: Deployment
-      name: backend
+- patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 1
+    - op: replace
+      path: /spec/template/spec/containers/0/env/0/value
+      value: "development"
+  target:
+    kind: Deployment
+    name: backend
 
 images:
-  - name: ghcr.io/emadrasooli/backend-api
-    newTag: 20260528-1652
+- name: ghcr.io/emadrasooli/backend-api
+  newName: ghcr.io/emadrasooli/backend-api
+  newTag: v20260919-0447-36a87a7
