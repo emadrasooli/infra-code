@@ -11,7 +11,7 @@ metadata:
 spec:
   project: gitops-thesis
   source:
-    repoURL: git@github.com:emadrasooli/infra-code.git
+    repoURL: https://github.com/emadrasooli/infra-code.git
     targetRevision: main
     path: apps/frontend/overlays/prod
   destination:

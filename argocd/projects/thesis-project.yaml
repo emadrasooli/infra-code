@@ -8,7 +8,7 @@ metadata:
 spec:
   description: GitOps thesis project - all four environments
   sourceRepos:
-    - "git@github.com:emadrasooli/infra-code.git"
+    - "https://github.com/emadrasooli/infra-code.git"
   destinations:
     - namespace: "dev"
       server: https://kubernetes.default.svc
