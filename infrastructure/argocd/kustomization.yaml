@@ -6,3 +6,8 @@ namespace: argocd
 resources:
   - namespace.yaml
   - https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.3/manifests/install.yaml
+
+images:
+  - name: quay.io/argoproj/argocd
+    newName: ghcr.io/emadrasooli/argocd
+    digest: sha256:dd3f47d5a5e4da563a7a398506e892481b358a7cec50abdf320c71aa55904bfa
