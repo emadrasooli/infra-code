@@ -29,4 +29,4 @@ patches:
 
 images:
   - name: ghcr.io/emadrasooli/frontend-app
-    newTag: latest
+    newTag: 20260528-1952

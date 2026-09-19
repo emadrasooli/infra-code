@@ -14,11 +14,10 @@ spec:
       labels:
         app: backend
     spec:
-      imagePullSecrets:
-        - name: ghcr-pull-secret
       containers:
         - name: backend
-          image: ghcr.io/emadrasooli/backend-api:latest
+          image: ghcr.io/emadrasooli/backend-api:20260528-1652
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
           env:

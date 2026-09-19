@@ -14,9 +14,6 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/env/0/value
         value: "development"
-      - op: add
-        path: /spec/template/spec/containers/0/imagePullPolicy
-        value: Never
     target:
       kind: Deployment
       name: frontend
