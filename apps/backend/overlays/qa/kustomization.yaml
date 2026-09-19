@@ -5,6 +5,7 @@ namespace: qa
 
 resources:
   - ../../base
+  - ../../secrets/backend-sealed-qa.yaml
 
 patches:
   - patch: |-

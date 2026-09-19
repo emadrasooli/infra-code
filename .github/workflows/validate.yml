@@ -20,21 +20,21 @@ jobs:
 
       - name: Validate frontend overlays
         run: |
-          kustomize build apps/frontend/overlays/dev
-          kustomize build apps/frontend/overlays/qa
-          kustomize build apps/frontend/overlays/staging
-          kustomize build apps/frontend/overlays/prod
+          kustomize build --load-restrictor LoadRestrictionsNone apps/frontend/overlays/dev
+          kustomize build --load-restrictor LoadRestrictionsNone apps/frontend/overlays/qa
+          kustomize build --load-restrictor LoadRestrictionsNone apps/frontend/overlays/staging
+          kustomize build --load-restrictor LoadRestrictionsNone apps/frontend/overlays/prod
 
       - name: Validate backend overlays
         run: |
-          kustomize build apps/backend/overlays/dev
-          kustomize build apps/backend/overlays/qa
-          kustomize build apps/backend/overlays/staging
-          kustomize build apps/backend/overlays/prod
+          kustomize build --load-restrictor LoadRestrictionsNone apps/backend/overlays/dev
+          kustomize build --load-restrictor LoadRestrictionsNone apps/backend/overlays/qa
+          kustomize build --load-restrictor LoadRestrictionsNone apps/backend/overlays/staging
+          kustomize build --load-restrictor LoadRestrictionsNone apps/backend/overlays/prod
 
       - name: Validate database overlays
         run: |
-          kustomize build apps/database/overlays/dev
-          kustomize build apps/database/overlays/qa
-          kustomize build apps/database/overlays/staging
-          kustomize build apps/database/overlays/prod
+          kustomize build --load-restrictor LoadRestrictionsNone apps/database/overlays/dev
+          kustomize build --load-restrictor LoadRestrictionsNone apps/database/overlays/qa
+          kustomize build --load-restrictor LoadRestrictionsNone apps/database/overlays/staging
+          kustomize build --load-restrictor LoadRestrictionsNone apps/database/overlays/prod

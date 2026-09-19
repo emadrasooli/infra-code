@@ -5,6 +5,7 @@ namespace: staging
 
 resources:
   - ../../base
+  - ../../secrets/backend-sealed-staging.yaml
 
 patches:
   - patch: |-

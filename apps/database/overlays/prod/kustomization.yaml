@@ -5,3 +5,4 @@ namespace: prod
 
 resources:
   - ../../base
+  - ../../secrets/postgresql-sealed-prod.yaml

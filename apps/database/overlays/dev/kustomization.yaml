@@ -5,3 +5,4 @@ namespace: dev
 
 resources:
   - ../../base
+  - ../../secrets/postgresql-sealed-dev.yaml

@@ -5,6 +5,7 @@ namespace: dev
 
 resources:
   - ../../base
+  - ../../secrets/backend-sealed-dev.yaml
 
 patches:
   - patch: |-
