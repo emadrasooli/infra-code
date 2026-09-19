@@ -5,7 +5,7 @@ namespace: prod
 
 resources:
   - ../../base
-  - ../../secrets/backend-sealed-prod.yaml
+  - backend-sealed-prod.yaml
 
 patches:
   - patch: |-

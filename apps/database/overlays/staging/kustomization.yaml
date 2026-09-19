@@ -5,4 +5,4 @@ namespace: staging
 
 resources:
   - ../../base
-  - ../../secrets/postgresql-sealed-staging.yaml
+  - postgresql-sealed-staging.yaml

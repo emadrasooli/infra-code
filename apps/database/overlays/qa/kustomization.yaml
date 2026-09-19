@@ -5,4 +5,4 @@ namespace: qa
 
 resources:
   - ../../base
-  - ../../secrets/postgresql-sealed-qa.yaml
+  - postgresql-sealed-qa.yaml
