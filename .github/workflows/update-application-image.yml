@@ -1,0 +1,252 @@
+name: Update Application Image
+
+on:
+  repository_dispatch:
+    types:
+      - image-built
+      - image-promote
+  workflow_dispatch:
+    inputs:
+      event_type:
+        description: 'Event type (image-built or image-promote)'
+        required: true
+        type: choice
+        options:
+          - image-built
+          - image-promote
+      component:
+        description: 'Component (backend or frontend)'
+        required: true
+        type: choice
+        options:
+          - backend
+          - frontend
+      environment:
+        description: 'Target environment for image-built (dev or prod)'
+        required: false
+        type: string
+        default: ''
+      image_tag:
+        description: 'Image tag for image-built (vYYYYMMDD-HHmm-<shortsha>)'
+        required: false
+        type: string
+        default: ''
+      source_environment:
+        description: 'Source environment for image-promote (dev, qa, staging)'
+        required: false
+        type: string
+        default: ''
+      target_environment:
+        description: 'Target environment for image-promote (qa, staging, prod)'
+        required: false
+        type: string
+        default: ''
+      source_sha:
+        description: 'Source Git commit SHA (optional)'
+        required: false
+        type: string
+        default: ''
+
+concurrency:
+  group: infra-image-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  update-image:
+    name: Update Desired Image State
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout infra-code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Kustomize
+        uses: multani/action-setup-kustomize@v1
+        with:
+          version: 5.8.1
+
+      - name: Process Image Update
+        id: update
+        run: |
+          set -euo pipefail
+
+          # 1. Resolve inputs based on trigger event
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            EVENT_TYPE="${{ github.event.action }}"
+            COMPONENT="${{ github.event.client_payload.component }}"
+            ENVIRONMENT="${{ github.event.client_payload.environment }}"
+            IMAGE_TAG="${{ github.event.client_payload.image_tag }}"
+            SOURCE_ENV="${{ github.event.client_payload.source_environment }}"
+            TARGET_ENV="${{ github.event.client_payload.target_environment }}"
+            SOURCE_SHA="${{ github.event.client_payload.source_sha }}"
+          else
+            EVENT_TYPE="${{ inputs.event_type }}"
+            COMPONENT="${{ inputs.component }}"
+            ENVIRONMENT="${{ inputs.environment }}"
+            IMAGE_TAG="${{ inputs.image_tag }}"
+            SOURCE_ENV="${{ inputs.source_environment }}"
+            TARGET_ENV="${{ inputs.target_environment }}"
+            SOURCE_SHA="${{ inputs.source_sha }}"
+          fi
+
+          echo "=== Event Details ==="
+          echo "Event Type: $EVENT_TYPE"
+          echo "Component:  $COMPONENT"
+
+          # 2. Strict component mapping
+          case "$COMPONENT" in
+            backend)
+              APP_DIR="apps/backend"
+              IMAGE_NAME="ghcr.io/emadrasooli/backend-api"
+              ;;
+            frontend)
+              APP_DIR="apps/frontend"
+              IMAGE_NAME="ghcr.io/emadrasooli/frontend-app"
+              ;;
+            *)
+              echo "::error::Invalid component '$COMPONENT'. Must be 'backend' or 'frontend'."
+              exit 1
+              ;;
+          esac
+
+          TAG_REGEX='^v[0-9]{8}-[0-9]{4}-[0-9a-f]{7,12}$'
+          SHA_REGEX='^[0-9a-fA-F]{7,40}$'
+
+          # Optional source_sha check
+          if [ -n "$SOURCE_SHA" ] && [[ ! "$SOURCE_SHA" =~ $SHA_REGEX ]]; then
+            echo "::error::Invalid source_sha '$SOURCE_SHA'. Must be a hexadecimal Git commit SHA."
+            exit 1
+          fi
+
+          # 3. Branching by event type & strict validation
+          case "$EVENT_TYPE" in
+            image-built)
+              case "$ENVIRONMENT" in
+                dev|prod)
+                  TARGET_ENV="$ENVIRONMENT"
+                  TARGET_OVERLAY="$APP_DIR/overlays/$TARGET_ENV"
+                  ;;
+                *)
+                  echo "::error::Invalid environment for image-built: '$ENVIRONMENT'. Must be 'dev' or 'prod'."
+                  exit 1
+                  ;;
+              esac
+
+              if [[ ! "$IMAGE_TAG" =~ $TAG_REGEX ]]; then
+                echo "::error::Invalid image_tag '$IMAGE_TAG'. Must match $TAG_REGEX"
+                exit 1
+              fi
+
+              FINAL_TAG="$IMAGE_TAG"
+              COMMIT_MSG="chore($COMPONENT): deploy $FINAL_TAG to $TARGET_ENV"
+              ;;
+
+            image-promote)
+              case "$SOURCE_ENV:$TARGET_ENV" in
+                dev:qa)
+                  ;;
+                qa:staging)
+                  ;;
+                staging:prod)
+                  ;;
+                *)
+                  echo "::error::Invalid promotion graph '$SOURCE_ENV' -> '$TARGET_ENV'. Allowed transitions: dev->qa, qa->staging, staging->prod."
+                  exit 1
+                  ;;
+              esac
+
+              SOURCE_OVERLAY="$APP_DIR/overlays/$SOURCE_ENV"
+              TARGET_OVERLAY="$APP_DIR/overlays/$TARGET_ENV"
+
+              if [ ! -f "$SOURCE_OVERLAY/kustomization.yaml" ]; then
+                echo "::error::Source overlay file not found: $SOURCE_OVERLAY/kustomization.yaml"
+                exit 1
+              fi
+
+              # Extract source image tag from source kustomization.yaml
+              SOURCE_TAG=$(grep -A 2 "$IMAGE_NAME" "$SOURCE_OVERLAY/kustomization.yaml" | grep "newTag:" | awk '{print $2}' | tr -d '"' | tr -d "'")
+              if [ -z "$SOURCE_TAG" ]; then
+                echo "::error::Could not extract tag for $IMAGE_NAME from $SOURCE_OVERLAY/kustomization.yaml"
+                exit 1
+              fi
+              echo "Extracted source tag from $SOURCE_ENV: $SOURCE_TAG"
+
+              if [[ ! "$SOURCE_TAG" =~ $TAG_REGEX ]]; then
+                echo "::error::Source tag '$SOURCE_TAG' does not match format $TAG_REGEX"
+                exit 1
+              fi
+
+              FINAL_TAG="$SOURCE_TAG"
+              COMMIT_MSG="chore($COMPONENT): promote image to $TARGET_ENV"
+              ;;
+
+            *)
+              echo "::error::Invalid event_type '$EVENT_TYPE'. Must be 'image-built' or 'image-promote'."
+              exit 1
+              ;;
+          esac
+
+          if [ -n "$SOURCE_SHA" ]; then
+            COMMIT_MSG="$COMMIT_MSG (source: $SOURCE_SHA)"
+          fi
+
+          echo "Target Overlay: $TARGET_OVERLAY"
+          echo "Target Image:   $IMAGE_NAME:$FINAL_TAG"
+
+          # 4. Idempotency / No-Op Check
+          CURRENT_TAG=$(grep -A 2 "$IMAGE_NAME" "$TARGET_OVERLAY/kustomization.yaml" | grep "newTag:" | awk '{print $2}' | tr -d '"' | tr -d "'")
+          echo "Current Tag in target: $CURRENT_TAG"
+
+          if [ "$CURRENT_TAG" = "$FINAL_TAG" ]; then
+            echo "Target overlay already contains tag '$FINAL_TAG'. NO CHANGE required."
+            exit 0
+          fi
+
+          # 5. Apply update via kustomize edit set image
+          (
+            cd "$TARGET_OVERLAY"
+            kustomize edit set image "$IMAGE_NAME=$IMAGE_NAME:$FINAL_TAG"
+          )
+
+          # Verify only the target kustomization.yaml was modified
+          MODIFIED_FILES=$(git diff --name-only)
+          EXPECTED_FILE="$TARGET_OVERLAY/kustomization.yaml"
+          if [ "$MODIFIED_FILES" != "$EXPECTED_FILE" ]; then
+            echo "::error::Unexpected modified files: '$MODIFIED_FILES'. Expected only '$EXPECTED_FILE'."
+            exit 1
+          fi
+
+          # 6. Render verification: Target overlay + all 12 overlays
+          echo "Verifying target overlay build: $TARGET_OVERLAY"
+          kustomize build "$TARGET_OVERLAY" > /dev/null
+
+          echo "Verifying all 12 overlays build cleanly..."
+          for a in backend frontend database; do
+            for e in dev qa staging prod; do
+              kustomize build "apps/$a/overlays/$e" > /dev/null || {
+                echo "::error::Render validation failed for apps/$a/overlays/$e"
+                exit 1
+              }
+            done
+          done
+          echo "All 12 overlays validated successfully (12/12 PASS)."
+
+          # 7. Commit changes
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$TARGET_OVERLAY/kustomization.yaml"
+          git commit -m "$COMMIT_MSG"
+
+          # 8. Safe Push with ancestor check
+          git fetch origin main
+          if ! git merge-base --is-ancestor origin/main HEAD; then
+            echo "::error::origin/main has advanced and is not an ancestor of local HEAD. Aborting push to prevent non-fast-forward conflict."
+            exit 1
+          fi
+
+          git push origin HEAD:main
+          echo "Successfully pushed update to origin/main: $COMMIT_MSG"
