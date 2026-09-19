@@ -4,20 +4,21 @@ kind: Kustomization
 namespace: qa
 
 resources:
-  - ../../base
+- ../../base
 
 patches:
-  - patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 1
-      - op: replace
-        path: /spec/template/spec/containers/0/env/0/value
-        value: "test"
-    target:
-      kind: Deployment
-      name: frontend
+- patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 1
+    - op: replace
+      path: /spec/template/spec/containers/0/env/0/value
+      value: "test"
+  target:
+    kind: Deployment
+    name: frontend
 
 images:
-  - name: ghcr.io/emadrasooli/frontend-app
-    newTag: 20260528-1952
+- name: ghcr.io/emadrasooli/frontend-app
+  newName: ghcr.io/emadrasooli/frontend-app
+  newTag: v20260919-1116-fe4db9a
