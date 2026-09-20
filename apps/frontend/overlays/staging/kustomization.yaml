@@ -4,23 +4,24 @@ kind: Kustomization
 namespace: staging
 
 resources:
-  - ../../base
+- ../../base
 
 patches:
-  - patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 2
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/requests/memory
-        value: "128Mi"
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/memory
-        value: "256Mi"
-    target:
-      kind: Deployment
-      name: frontend
+- patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 2
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/memory
+      value: "128Mi"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: "256Mi"
+  target:
+    kind: Deployment
+    name: frontend
 
 images:
-  - name: ghcr.io/emadrasooli/frontend-app
-    newTag: 20260528-1952
+- name: ghcr.io/emadrasooli/frontend-app
+  newName: ghcr.io/emadrasooli/frontend-app
+  newTag: v20260920-0409-3fa202f
