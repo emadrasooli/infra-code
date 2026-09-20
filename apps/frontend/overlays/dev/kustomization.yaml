@@ -21,4 +21,4 @@ patches:
 images:
 - name: ghcr.io/emadrasooli/frontend-app
   newName: ghcr.io/emadrasooli/frontend-app
-  newTag: v20260919-1116-fe4db9a
+  newTag: v20260920-0409-3fa202f
